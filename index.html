@@ -235,7 +235,36 @@
         // ================================================================
         //  КАМНИ ДЛЯ КЛИКЕРА (28)
         // ================================================================
-        
+        const MINERALS = [
+            { id: 0, name: 'Песок', rarity: 'Common', multiplier: 1, target: 200, img: 'images/Кликер/песок.png' },
+            { id: 1, name: 'Глина', rarity: 'Common', multiplier: 1, target: 300, img: 'images/Кликер/глина.png' },
+            { id: 2, name: 'Гравий', rarity: 'Common', multiplier: 1, target: 400, img: 'images/Кликер/гравий.png' },
+            { id: 3, name: 'Известняк', rarity: 'Common', multiplier: 1, target: 500, img: 'images/Кликер/известняк.png' },
+            { id: 4, name: 'Уголь', rarity: 'Uncommon', multiplier: 1.5, target: 750, img: 'images/Кликер/уголь.png' },
+            { id: 5, name: 'Соль', rarity: 'Uncommon', multiplier: 1.5, target: 900, img: 'images/Кликер/соль.png' },
+            { id: 6, name: 'Мрамор', rarity: 'Uncommon', multiplier: 1.5, target: 1500, img: 'images/Кликер/мрамор.png' },
+            { id: 7, name: 'Гипс', rarity: 'Uncommon', multiplier: 1.5, target: 2000, img: 'images/Кликер/гипс.png' },
+            { id: 8, name: 'Медь', rarity: 'Rare', multiplier: 2.5, target: 5000, img: 'images/Кликер/медь.png' },
+            { id: 9, name: 'Олово', rarity: 'Rare', multiplier: 2.5, target: 10000, img: 'images/Кликер/олово.png' },
+            { id: 10, name: 'Свинец', rarity: 'Rare', multiplier: 2.5, target: 15000, img: 'images/Кликер/свинец.png' },
+            { id: 11, name: 'Цинк', rarity: 'Rare', multiplier: 2.5, target: 25000, img: 'images/Кликер/цинк.png' },
+            { id: 12, name: 'Серебро', rarity: 'Epic', multiplier: 4, target: 35000, img: 'images/Кликер/серебро.png' },
+            { id: 13, name: 'Золото', rarity: 'Epic', multiplier: 4, target: 80000, img: 'images/Кликер/золото.png' },
+            { id: 14, name: 'Платина', rarity: 'Epic', multiplier: 4, target: 150000, img: 'images/Кликер/платина.png' },
+            { id: 15, name: 'Изумруд', rarity: 'Epic', multiplier: 4, target: 350000, img: 'images/Кликер/изумруд.png' },
+            { id: 16, name: 'Алмаз', rarity: 'Legendary', multiplier: 100, target: 600000, img: 'images/Кликер/алмаз.png' },
+            { id: 17, name: 'Рубин', rarity: 'Legendary', multiplier: 100, target: 1200000, img: 'images/Кликер/рубин.png' },
+            { id: 18, name: 'Аквамарин', rarity: 'Legendary', multiplier: 100, target: 3500000, img: 'images/Кликер/аквамарин.png' },
+            { id: 19, name: 'Александрит', rarity: 'Legendary', multiplier: 100, target: 10000000, img: 'images/Кликер/александрит.png' },
+            { id: 20, name: 'Падпараджа', rarity: 'Exotic', multiplier: 7000, target: 80000000, img: 'images/Кликер/падпараджа.png' },
+            { id: 21, name: 'Муассанит', rarity: 'Exotic', multiplier: 10000, target: 150000000, img: 'images/Кликер/муассанит.png' },
+            { id: 22, name: 'Грандидьерит', rarity: 'Exotic', multiplier: 10000, target: 200000000, img: 'images/Кликер/грандидьерит.png' },
+            { id: 23, name: 'Тааффеит', rarity: 'Exotic', multiplier: 10000, target: 500000000, img: 'images/Кликер/тааффеит.png' },
+            { id: 24, name: 'Пейнит', rarity: 'Apex', multiplier: 100000, target: 1000000000, img: 'images/Кликер/пейнит.png' },
+            { id: 25, name: 'Красный алмаз', rarity: 'Apex', multiplier: 100000, target: 5000000000, img: 'images/Кликер/красный_алмаз.png' },
+            { id: 26, name: 'Лунный камень', rarity: 'Apex', multiplier: 100000, target: 10000000000, img: 'images/Кликер/лунный_камень.png' },
+            { id: 27, name: 'Сердце планеты', rarity: 'Apex', multiplier: 100000, target: 100000000000, img: 'images/Кликер/сердце_планеты.png' },
+        ];
 
         // ================================================================
         //  КАМНИ ДЛЯ ШАХТЫ (15)
