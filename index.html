@@ -1,0 +1,993 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+    <title>Шахтёрский Кликер</title>
+    
+    <!-- ====== ПОДКЛЮЧАЕМ SDK ЯНДЕКСА ====== -->
+    <script src="https://yandex.ru/games/sdk/v2/sdk.js"></script>
+    
+    <style>
+        /* ====== ВЕСЬ ТВОЙ СТАРЫЙ CSS ====== */
+        * { margin:0; padding:0; box-sizing:border-box; user-select:none; -webkit-tap-highlight-color:transparent; }
+        body {
+            font-family:'Segoe UI',Arial,sans-serif;
+            background:#080402;
+            color:#d4c5b2;
+            min-height:100vh;
+            display:flex;
+            justify-content:center;
+            align-items:center;
+            background-image:radial-gradient(ellipse at 50% 30%, #1a0e08 0%, #050302 100%);
+            padding:10px;
+        }
+        #app {
+            max-width:480px;
+            width:100%;
+            background:rgba(12,8,6,0.96);
+            border-radius:32px;
+            padding:22px 18px 25px;
+            border:1px solid #3a2818;
+            box-shadow:0 25px 60px rgba(0,0,0,0.95), inset 0 1px 0 #5a3a22;
+            backdrop-filter:blur(6px);
+            position:relative;
+            overflow:hidden;
+        }
+        #app::before {
+            content:'';
+            position:absolute;
+            top:0;
+            left:0;
+            width:100%;
+            height:2px;
+            background:linear-gradient(90deg, transparent, #f7d67a, #d4a04a, #f7d67a, transparent);
+            opacity:0.6;
+        }
+        .header {
+            display:flex;
+            justify-content:space-between;
+            align-items:center;
+            margin-bottom:12px;
+            flex-wrap:wrap;
+            gap:6px;
+        }
+        .title {
+            font-size:22px;
+            font-weight:800;
+            background:linear-gradient(135deg, #f7d67a, #d4a04a);
+            -webkit-background-clip:text;
+            background-clip:text;
+            -webkit-text-fill-color:transparent;
+            letter-spacing:1px;
+            text-shadow:0 0 30px rgba(212,160,74,0.2);
+        }
+        .stats {
+            font-size:13px;
+            background:#1a0e08;
+            padding:5px 14px;
+            border-radius:30px;
+            border:1px solid #3a2818;
+            color:#a09080;
+            display:flex;
+            gap:12px;
+            font-weight:500;
+        }
+        .stats span { color:#f0d8b0; font-weight:700; }
+        .mineral-card {
+            background:linear-gradient(145deg, #140c08, #1e120c);
+            border-radius:24px;
+            padding:14px 16px 16px;
+            margin:8px 0 14px;
+            border:1px solid #3a2818;
+            text-align:center;
+            position:relative;
+            overflow:hidden;
+            transition:all 0.5s ease;
+            box-shadow:inset 0 1px 0 #4a3222;
+        }
+        .mineral-card .glow {
+            position:absolute;
+            top:-50%;
+            left:-50%;
+            width:200%;
+            height:200%;
+            background:radial-gradient(circle, rgba(255,215,0,0.08) 0%, transparent 70%);
+            pointer-events:none;
+            transition:0.6s;
+            opacity:0;
+        }
+        .mineral-card.legendary {
+            border-color:#f7d67a;
+            box-shadow:0 0 40px rgba(212,160,74,0.15), inset 0 0 60px rgba(212,160,74,0.05);
+        }
+        .mineral-card.legendary .glow { opacity:1; animation:pulseGlow 3s infinite; }
+        @keyframes pulseGlow {
+            0%,100% { transform:scale(1); opacity:0.4; }
+            50% { transform:scale(1.3); opacity:0.9; }
+        }
+        .mineral-name { font-size:26px; font-weight:700; margin-bottom:2px; position:relative; z-index:1; color:#f0e0d0; text-shadow:0 0 20px rgba(0,0,0,0.5); }
+        .mineral-rarity { font-size:12px; text-transform:uppercase; letter-spacing:3px; opacity:0.7; margin-bottom:6px; position:relative; z-index:1; font-weight:600; }
+        .mineral-multiplier { font-size:14px; background:#1a0e08; display:inline-block; padding:2px 18px; border-radius:30px; border:1px solid #4a3222; position:relative; z-index:1; color:#f7d67a; font-weight:700; }
+        .mineral-img { width:80px; height:80px; object-fit:contain; display:block; margin:4px auto 6px; filter:drop-shadow(0 0 20px rgba(212,160,74,0.15)); transition:0.3s; }
+        .mineral-card.legendary .mineral-img { filter:drop-shadow(0 0 30px rgba(212,160,74,0.4)); }
+        .progress-wrap { margin:12px 0 10px; }
+        .progress-label { display:flex; justify-content:space-between; font-size:12px; color:#a09080; margin-bottom:4px; font-weight:500; }
+        .progress-label span:first-child { color:#f0d8b0; }
+        .progress-track { width:100%; height:10px; background:#1a0e08; border-radius:30px; overflow:hidden; border:1px solid #2a1a10; }
+        .progress-fill { height:100%; width:0%; border-radius:30px; transition:width 0.3s ease; background:linear-gradient(90deg, #b8860b, #f7d67a); box-shadow:0 0 20px rgba(212,160,74,0.2); position:relative; }
+        .progress-fill::after { content:''; position:absolute; top:0; left:0; right:0; bottom:0; background:linear-gradient(90deg, transparent, rgba(255,255,255,0.15), transparent); animation:shimmer 2s infinite; }
+        @keyframes shimmer { 0% { transform:translateX(-100%); } 100% { transform:translateX(100%); } }
+        .click-area { display:flex; flex-direction:column; align-items:center; margin:10px 0 12px; }
+        .click-btn { width:160px; height:160px; border-radius:50%; border:2px solid #4a3222; background:radial-gradient(circle at 35% 35%, #2a1a10, #0a0604); display:flex; align-items:center; justify-content:center; cursor:pointer; transition:transform 0.1s, box-shadow 0.2s; box-shadow:0 6px 0 #0a0604, 0 15px 40px rgba(0,0,0,0.7); position:relative; margin:0 auto; }
+        .click-btn:active { transform:scale(0.94); box-shadow:0 2px 0 #0a0604, 0 8px 30px rgba(0,0,0,0.7); }
+        .click-btn img { width:100px; height:100px; object-fit:contain; filter:drop-shadow(0 0 25px rgba(212,160,74,0.2)); transition:0.3s; }
+        .click-btn .click-text { font-size:16px; font-weight:700; color:#f7d67a; position:absolute; bottom:22px; background:#0a0604cc; padding:2px 16px; border-radius:30px; border:1px solid #3a2818; backdrop-filter:blur(4px); letter-spacing:0.5px; }
+        .click-btn .float-text { position:absolute; font-size:26px; font-weight:800; color:#f7d67a; pointer-events:none; animation:floatUp 0.9s ease-out forwards; z-index:10; text-shadow:0 0 20px rgba(212,160,74,0.5); }
+        @keyframes floatUp { 0% { opacity:1; transform:translateY(0) scale(0.8); } 100% { opacity:0; transform:translateY(-100px) scale(1.4); } }
+        .click-counter { font-size:15px; margin-top:10px; color:#a09080; font-weight:500; }
+        .click-counter span { color:#f0d8b0; font-weight:700; }
+        .tabs { display:flex; gap:6px; margin:16px 0 10px; }
+        .tab-btn { flex:1; padding:10px 0; border:none; border-radius:14px; background:#140c08; color:#a09080; font-size:14px; font-weight:600; cursor:pointer; transition:all 0.3s ease; border:1px solid transparent; position:relative; overflow:hidden; }
+        .tab-btn::after { content:''; position:absolute; bottom:0; left:50%; width:0; height:2px; background:#f7d67a; transition:all 0.3s ease; transform:translateX(-50%); }
+        .tab-btn.active { background:#1e120c; color:#f7d67a; border-color:#3a2818; box-shadow:inset 0 1px 0 #4a3222; }
+        .tab-btn.active::after { width:40%; }
+        .tab-btn:active { transform:scale(0.95); }
+        .tab-content { display:none; background:#0a0604; border-radius:18px; padding:14px 12px; border:1px solid #1e120c; min-height:180px; max-height:380px; overflow-y:auto; animation:fadeSlideIn 0.35s ease; }
+        .tab-content.active { display:block; }
+        @keyframes fadeSlideIn { 0% { opacity:0; transform:translateY(10px) scale(0.97); } 100% { opacity:1; transform:translateY(0) scale(1); } }
+        .tab-content::-webkit-scrollbar { width:4px; }
+        .tab-content::-webkit-scrollbar-track { background:#0a0604; }
+        .tab-content::-webkit-scrollbar-thumb { background:#3a2818; border-radius:10px; }
+        .section-title { font-size:13px; font-weight:700; color:#f7d67a; margin:8px 0 4px; border-bottom:1px solid #1e120c; padding-bottom:4px; letter-spacing:1px; }
+        .index-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:6px; }
+        .index-item { background:#140c08; border-radius:12px; padding:6px 4px; text-align:center; font-size:10px; border:1px solid #1a0e08; transition:all 0.3s ease; color:#6a5a4a; animation:popIn 0.3s ease; }
+        .index-item.found { border-color:#b8860b; color:#f0d8b0; background:#1e120c; box-shadow:0 0 20px rgba(212,160,74,0.08); }
+        .index-item img { width:32px; height:32px; object-fit:contain; display:block; margin:0 auto 2px; }
+        .index-item .idx-name { font-size:8px; word-break:break-word; opacity:0.8; }
+        .index-item .idx-count { font-size:12px; font-weight:700; color:#f7d67a; }
+        @keyframes popIn { 0% { opacity:0; transform:scale(0.8); } 100% { opacity:1; transform:scale(1); } }
+        .inventory-count { font-size:13px; color:#f7d67a; text-align:center; margin-bottom:6px; font-weight:600; letter-spacing:0.5px; }
+        .mine-status { text-align:center; padding:10px 0; font-size:14px; color:#a09080; }
+        .mine-status .big { font-size:32px; display:block; margin-bottom:4px; }
+        .mine-status img { width:72px; height:72px; object-fit:contain; display:block; margin:0 auto 8px; filter:drop-shadow(0 0 20px rgba(212,160,74,0.15)); }
+        .mine-btn { width:100%; padding:14px; border:none; border-radius:16px; background:linear-gradient(145deg, #2a1a10, #1a0e08); color:#f7d67a; font-size:18px; font-weight:700; cursor:pointer; border:1px solid #3a2818; transition:all 0.15s; margin:6px 0; box-shadow:inset 0 1px 0 #4a3222; }
+        .mine-btn:active { transform:scale(0.97); }
+        .mine-btn:disabled { opacity:0.4; transform:none; }
+        .mine-timer { font-size:20px; font-weight:700; color:#f7d67a; }
+        .mine-progress .progress-track { height:8px; }
+        .mine-progress .progress-fill { background:#d4a04a; }
+        .sub-text { font-size:12px; color:#6a5a4a; text-align:center; margin-top:6px; }
+        .rebirth-info { display:flex; justify-content:space-between; align-items:center; background:#1a0e08; border-radius:16px; padding:8px 14px; border:1px solid #2a1a10; margin:6px 0 10px; font-size:13px; color:#a09080; }
+        .rebirth-info .highlight { color:#f7d67a; font-weight:700; }
+        .rebirth-btn { padding:6px 18px; border:none; border-radius:30px; background:linear-gradient(135deg, #f7d67a, #d4a04a); color:#0a0604; font-weight:700; font-size:14px; cursor:pointer; transition:0.2s; }
+        .rebirth-btn:active { transform:scale(0.95); }
+        .rebirth-btn:disabled { opacity:0.3; cursor:not-allowed; }
+        @media (max-width:420px) { .click-btn { width:130px; height:130px; } .click-btn img { width:80px; height:80px; } .click-btn .click-text { font-size:13px; bottom:16px; padding:2px 12px; } .mineral-name { font-size:20px; } .title { font-size:18px; } .index-grid { grid-template-columns:repeat(4,1fr); } .stats { font-size:11px; padding:3px 10px; } }
+        @media (max-width:360px) { .click-btn { width:110px; height:110px; } .click-btn img { width:64px; height:64px; } .index-grid { grid-template-columns:repeat(3,1fr); } }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <div class="header">
+            <div class="title">⛏️ Шахтёр</div>
+            <div class="stats">
+                <span id="totalClicksDisplay">0</span> кликов
+            </div>
+        </div>
+        <div class="mineral-card" id="mineralCard">
+            <div class="glow"></div>
+            <img class="mineral-img" id="mineralImage" src="images/Кликер/песок.png" alt="Песок" />
+            <div class="mineral-name" id="mineralName">Песок</div>
+            <div class="mineral-rarity" id="mineralRarity">Обычный</div>
+            <div class="mineral-multiplier" id="mineralMultiplier">×1</div>
+        </div>
+        <div class="progress-wrap">
+            <div class="progress-label">
+                <span id="progressCurrent">0</span>
+                <span id="progressTarget">200</span>
+            </div>
+            <div class="progress-track">
+                <div class="progress-fill" id="progressFill" style="width:0%"></div>
+            </div>
+        </div>
+        <div class="click-area">
+            <div class="click-btn" id="clickBtn">
+                <img id="clickImage" src="images/Кликер/песок.png" alt="Клик" />
+                <span class="click-text" id="clickMultiplierDisplay">+1</span>
+            </div>
+            <div class="click-counter">
+                Всего кликов: <span id="totalClicksDisplay2">0</span>
+            </div>
+        </div>
+        <div class="rebirth-info" id="rebirthInfo">
+            <span>Перерождений: <span class="highlight" id="rebirthCountDisplay">0</span></span>
+            <span>Множитель: <span class="highlight" id="rebirthMultiplierDisplay">×1</span></span>
+            <button class="rebirth-btn" id="rebirthBtn" style="display:none;">🔄 Переродиться</button>
+        </div>
+        <div class="tabs">
+            <button class="tab-btn active" data-tab="main">⛏️ Кликер</button>
+            <button class="tab-btn" data-tab="index">📊 Индекс</button>
+            <button class="tab-btn" data-tab="inventory">🎒 Инвентарь</button>
+            <button class="tab-btn" data-tab="mine">⛰️ Шахта</button>
+        </div>
+        <div class="tab-content active" id="tab-main">
+            <div style="text-align:center;color:#6a5a4a;font-size:14px;padding:20px 0;">
+                🔨 Копай глубже — открывай новые минералы!
+            </div>
+        </div>
+        <div class="tab-content" id="tab-index">
+            <div class="section-title">📦 Кликер</div>
+            <div class="index-grid" id="indexGrid"></div>
+            <div class="section-title" style="margin-top:12px;">⛰️ Шахта</div>
+            <div class="index-grid" id="mineIndexGrid"></div>
+        </div>
+        <div class="tab-content" id="tab-inventory">
+            <div class="inventory-count" id="inventoryCount">Найдено: 0 / ∞</div>
+            <div class="index-grid" id="inventoryGrid"></div>
+        </div>
+        <div class="tab-content" id="tab-mine">
+            <div id="mineContent"></div>
+        </div>
+    </div>
+
+    <script>
+        // ================================================================
+        //  КАМНИ ДЛЯ КЛИКЕРА (28)
+        // ================================================================
+        const MINERALS = [
+            { id: 0, name: 'Песок', rarity: 'Common', multiplier: 1, target: 200, img: 'images/Кликер/песок.png' },
+            { id: 1, name: 'Глина', rarity: 'Common', multiplier: 1, target: 300, img: 'images/Кликер/глина.png' },
+            { id: 2, name: 'Гравий', rarity: 'Common', multiplier: 1, target: 400, img: 'images/Кликер/гравий.png' },
+            { id: 3, name: 'Известняк', rarity: 'Common', multiplier: 1, target: 500, img: 'images/Кликер/известняк.png' },
+            { id: 4, name: 'Уголь', rarity: 'Uncommon', multiplier: 1.5, target: 750, img: 'images/Кликер/уголь.png' },
+            { id: 5, name: 'Соль', rarity: 'Uncommon', multiplier: 1.5, target: 900, img: 'images/Кликер/соль.png' },
+            { id: 6, name: 'Мрамор', rarity: 'Uncommon', multiplier: 1.5, target: 1500, img: 'images/Кликер/мрамор.png' },
+            { id: 7, name: 'Гипс', rarity: 'Uncommon', multiplier: 1.5, target: 2000, img: 'images/Кликер/гипс.png' },
+            { id: 8, name: 'Медь', rarity: 'Rare', multiplier: 2.5, target: 5000, img: 'images/Кликер/медь.png' },
+            { id: 9, name: 'Олово', rarity: 'Rare', multiplier: 2.5, target: 10000, img: 'images/Кликер/олово.png' },
+            { id: 10, name: 'Свинец', rarity: 'Rare', multiplier: 2.5, target: 15000, img: 'images/Кликер/свинец.png' },
+            { id: 11, name: 'Цинк', rarity: 'Rare', multiplier: 2.5, target: 25000, img: 'images/Кликер/цинк.png' },
+            { id: 12, name: 'Серебро', rarity: 'Epic', multiplier: 4, target: 35000, img: 'images/Кликер/серебро.png' },
+            { id: 13, name: 'Золото', rarity: 'Epic', multiplier: 4, target: 80000, img: 'images/Кликер/золото.png' },
+            { id: 14, name: 'Платина', rarity: 'Epic', multiplier: 4, target: 150000, img: 'images/Кликер/платина.png' },
+            { id: 15, name: 'Изумруд', rarity: 'Epic', multiplier: 4, target: 350000, img: 'images/Кликер/изумруд.png' },
+            { id: 16, name: 'Алмаз', rarity: 'Legendary', multiplier: 10, target: 600000, img: 'images/Кликер/алмаз.png' },
+            { id: 17, name: 'Рубин', rarity: 'Legendary', multiplier: 10, target: 1200000, img: 'images/Кликер/рубин.png' },
+            { id: 18, name: 'Аквамарин', rarity: 'Legendary', multiplier: 10, target: 3500000, img: 'images/Кликер/аквамарин.png' },
+            { id: 19, name: 'Александрит', rarity: 'Legendary', multiplier: 10, target: 10000000, img: 'images/Кликер/александрит.png' },
+            { id: 20, name: 'Падпараджа', rarity: 'Exotic', multiplier: 10, target: 80000000, img: 'images/Кликер/падпараджа.png' },
+            { id: 21, name: 'Муассанит', rarity: 'Exotic', multiplier: 10, target: 150000000, img: 'images/Кликер/муассанит.png' },
+            { id: 22, name: 'Грандидьерит', rarity: 'Exotic', multiplier: 10, target: 200000000, img: 'images/Кликер/грандидьерит.png' },
+            { id: 23, name: 'Тааффеит', rarity: 'Exotic', multiplier: 10, target: 500000000, img: 'images/Кликер/тааффеит.png' },
+            { id: 24, name: 'Пейнит', rarity: 'Apex', multiplier: 10, target: 1000000000, img: 'images/Кликер/пейнит.png' },
+            { id: 25, name: 'Красный алмаз', rarity: 'Apex', multiplier: 10, target: 5000000000, img: 'images/Кликер/красный_алмаз.png' },
+            { id: 26, name: 'Лунный камень', rarity: 'Apex', multiplier: 10, target: 10000000000, img: 'images/Кликер/лунный_камень.png' },
+            { id: 27, name: 'Сердце планеты', rarity: 'Apex', multiplier: 10, target: 100000000000, img: 'images/Кликер/сердце_планеты.png' },
+        ];
+
+        // ================================================================
+        //  КАМНИ ДЛЯ ШАХТЫ (15)
+        // ================================================================
+        const MINE_MINERALS = [
+            { id: 0, name: 'Осколок луны', rarity: 'Лунный', img: 'images/Шахта/осколок_луны.png' },
+            { id: 1, name: 'Звездная пыль', rarity: 'Космический', img: 'images/Шахта/звездная_пыль.png' },
+            { id: 2, name: 'Кристалл времени', rarity: 'Хроно', img: 'images/Шахта/кристалл_времени.png' },
+            { id: 3, name: 'Окаменелое дерево', rarity: 'Древний', img: 'images/Шахта/окаменелое_дерево.png' },
+            { id: 4, name: 'Слеза дракона', rarity: 'Мифический', img: 'images/Шахта/слеза_дракона.png' },
+            { id: 5, name: 'Сердце океана', rarity: 'Глубинный', img: 'images/Шахта/сердце_океана.png' },
+            { id: 6, name: 'Небесный камень', rarity: 'Небесный', img: 'images/Шахта/небесный_камень.png' },
+            { id: 7, name: 'Обсидиан', rarity: 'Вулканический', img: 'images/Шахта/обсидиан.png' },
+            { id: 8, name: 'Янтарь', rarity: 'Янтарный', img: 'images/Шахта/янтарь.png' },
+            { id: 9, name: 'Метеорит', rarity: 'Звёздный', img: 'images/Шахта/метеорит.png' },
+            { id: 10, name: 'Кость гиганта', rarity: 'Ископаемое', img: 'images/Шахта/кость_гиганта.png' },
+            { id: 11, name: 'Кристалл тьмы', rarity: 'Тёмный', img: 'images/Шахта/кристалл_тьмы.png' },
+            { id: 12, name: 'Световой камень', rarity: 'Светлый', img: 'images/Шахта/световой_камень.png' },
+            { id: 13, name: 'Камень желаний', rarity: 'Магический', img: 'images/Шахта/камень_желаний.png' },
+            { id: 14, name: 'Сердце вселенной', rarity: 'Космический', img: 'images/Шахта/сердце_вселенной.png' },
+        ];
+
+        // ================================================================
+        //  СОСТОЯНИЕ
+        // ================================================================
+        let state = {
+            currentMineralIndex: 0,
+            clicksOnCurrent: 0,
+            totalClicks: 0,
+            gameCompleted: false,
+            mineFound: null,
+            mineCooldown: false,
+            mineCollection: new Array(15).fill(false),
+            legendaryReached: false,
+            inventory: {},
+            rebirthCount: 0,
+            rebirthMultiplier: 1,
+            rebirthTarget: 100000000000,
+        };
+
+        // ================================================================
+        //  ЗВУКИ
+        // ================================================================
+        let bgAudio = null;
+        let currentBg = '';
+
+        function playSound(file, volume = 0.5) {
+            try {
+                const audio = new Audio('sounds/' + file);
+                audio.volume = volume;
+                audio.play().catch(() => {});
+            } catch {}
+        }
+
+        function playClickSound() { playSound('click.mp3', 0.3); }
+        function playDivineSound() { playSound('divine-secret.mp3', 0.6); }
+        function playExoticSound() { playSound('exotic.mp3', 0.6); }
+        function playApexSound() { playSound('apex.mp3', 0.7); }
+        function playMineFoundSound() { playSound('mine-found.mp3', 0.5); }
+        function playLevelUpSound() { playSound('level-up.mp3', 0.3); }
+
+        function stopBackground() {
+            if (bgAudio) { bgAudio.pause(); bgAudio = null; }
+            currentBg = '';
+        }
+
+        function playBackground(file, volume = 0.4) {
+            if (currentBg === file && bgAudio && !bgAudio.paused) return;
+            stopBackground();
+            try {
+                bgAudio = new Audio('sounds/' + file);
+                bgAudio.volume = volume;
+                bgAudio.loop = true;
+                bgAudio.play().catch(() => {});
+                currentBg = file;
+            } catch {}
+        }
+
+        function checkBackgroundMusic() {
+            const mineral = getCurrentMineral();
+            const isLegendary = ['Legendary', 'Exotic', 'Apex'].includes(mineral.rarity);
+            if (isLegendary && !state.legendaryReached) {
+                state.legendaryReached = true;
+                playBackground('background-legendary.mp3', 0.35);
+            } else if (!isLegendary && !state.legendaryReached) {
+                playBackground('background.mp3', 0.3);
+            }
+        }
+
+        // ================================================================
+        //  ОСТАЛЬНАЯ ЛОГИКА
+        // ================================================================
+        function saveGame() {
+            const data = {
+                currentMineralIndex: state.currentMineralIndex,
+                clicksOnCurrent: state.clicksOnCurrent,
+                totalClicks: state.totalClicks,
+                gameCompleted: state.gameCompleted,
+                mineCollection: state.mineCollection,
+                legendaryReached: state.legendaryReached,
+                inventory: state.inventory,
+                rebirthCount: state.rebirthCount,
+                rebirthMultiplier: state.rebirthMultiplier,
+                rebirthTarget: state.rebirthTarget,
+            };
+            localStorage.setItem('minerClickerSave', JSON.stringify(data));
+        }
+
+        function loadGame() {
+            const raw = localStorage.getItem('minerClickerSave');
+            if (!raw) return;
+            try {
+                const data = JSON.parse(raw);
+                state.currentMineralIndex = data.currentMineralIndex ?? 0;
+                state.clicksOnCurrent = data.clicksOnCurrent ?? 0;
+                state.totalClicks = data.totalClicks ?? 0;
+                state.gameCompleted = data.gameCompleted ?? false;
+                state.mineCollection = data.mineCollection ?? new Array(15).fill(false);
+                state.legendaryReached = data.legendaryReached ?? false;
+                state.inventory = data.inventory || {};
+                state.rebirthCount = data.rebirthCount || 0;
+                state.rebirthMultiplier = data.rebirthMultiplier || 1;
+                state.rebirthTarget = data.rebirthTarget || 100000000000;
+                while (state.mineCollection.length < 15) state.mineCollection.push(false);
+            } catch {}
+        }
+
+        function getCurrentMineral() {
+            const m = MINERALS[state.currentMineralIndex];
+            return {
+                ...m,
+                multiplier: m.multiplier * state.rebirthMultiplier
+            };
+        }
+
+        function getRarityColor(rarity) {
+            const map = {
+                'Common': '#888',
+                'Uncommon': '#4a8',
+                'Rare': '#48c',
+                'Epic': '#a5c',
+                'Legendary': '#fa4',
+                'Exotic': '#e8a',
+                'Apex': '#fe0',
+            };
+            return map[rarity] || '#888';
+        }
+
+        function getRarityLabel(rarity) {
+            const map = {
+                'Common': 'Обычный',
+                'Uncommon': 'Необычный',
+                'Rare': 'Редкий',
+                'Epic': 'Эпический',
+                'Legendary': 'Легендарный',
+                'Exotic': 'Экзотический',
+                'Apex': 'Высший',
+            };
+            return map[rarity] || rarity;
+        }
+
+        function formatNumber(num) {
+            if (num < 1000) return Math.floor(num).toString();
+            if (num < 1e6) return (num / 1e3).toFixed(1) + 'K';
+            if (num < 1e9) return (num / 1e6).toFixed(1) + 'M';
+            if (num < 1e12) return (num / 1e9).toFixed(1) + 'B';
+            return (num / 1e12).toFixed(1) + 'T';
+        }
+
+        // ================================================================
+        //  РЕКЛАМА (ЯНДЕКС)
+        // ================================================================
+        let yandexSDK = null;
+        let isAdReady = false;
+
+        async function initYandexSDK() {
+            try {
+                // Ждём, пока SDK загрузится
+                if (typeof YaGames !== 'undefined') {
+                    yandexSDK = await YaGames.init();
+                    console.log('✅ Яндекс SDK инициализирован!');
+                    
+                    // Проверяем, есть ли рекламные блоки
+                    try {
+                        const adInfo = await yandexSDK.getAdInfo();
+                        console.log('Реклама доступна:', adInfo);
+                        isAdReady = true;
+                    } catch (e) {
+                        console.log('Реклама пока не настроена:', e);
+                    }
+                } else {
+                    console.log('⚠️ Яндекс SDK не загружен, реклама не будет работать');
+                }
+            } catch (e) {
+                console.error('❌ Ошибка инициализации Яндекс SDK:', e);
+            }
+        }
+
+        // Показать межстраничную рекламу
+        function showInterstitialAd() {
+            if (!yandexSDK) {
+                console.log('⚠️ SDK не инициализирован, пропускаем рекламу');
+                return;
+            }
+            
+            try {
+                yandexSDK.showInterstitialAd().then(() => {
+                    console.log('📺 Межстраничная реклама показана');
+                }).catch(err => {
+                    console.log('⚠️ Реклама не показана:', err);
+                });
+            } catch (e) {
+                console.log('⚠️ Ошибка показа рекламы:', e);
+            }
+        }
+
+        // Показать рекламу с наградой
+        function showRewardedAd() {
+            return new Promise((resolve) => {
+                if (!yandexSDK) {
+                    console.log('⚠️ SDK не инициализирован, даём бонус без рекламы');
+                    resolve(true);
+                    return;
+                }
+                
+                try {
+                    yandexSDK.showRewardedAd().then(() => {
+                        console.log('🎁 Реклама с наградой просмотрена!');
+                        resolve(true);
+                    }).catch(err => {
+                        console.log('⚠️ Реклама с наградой не показана:', err);
+                        resolve(false);
+                    });
+                } catch (e) {
+                    console.log('⚠️ Ошибка показа рекламы с наградой:', e);
+                    resolve(false);
+                }
+            });
+        }
+
+        // ================================================================
+        //  ОБНОВЛЕНИЕ UI
+        // ================================================================
+        function updateUI() {
+            const mineral = getCurrentMineral();
+            const isFinished = state.gameCompleted;
+
+            if (isFinished) {
+                document.getElementById('mineralName').textContent = '🏆 Завершено!';
+                document.getElementById('mineralRarity').textContent = 'Кликер пройден';
+                document.getElementById('mineralRarity').style.color = '#f7d67a';
+                document.getElementById('mineralMultiplier').textContent = '🎉';
+                document.getElementById('mineralImage').src = 'images/Кликер/сердце_планеты.png';
+                document.getElementById('clickImage').src = 'images/Кликер/сердце_планеты.png';
+                document.getElementById('clickMultiplierDisplay').textContent = '+0';
+                document.getElementById('progressCurrent').textContent = '✅';
+                document.getElementById('progressTarget').textContent = 'ГОТОВО';
+                document.getElementById('progressFill').style.width = '100%';
+                document.getElementById('progressFill').style.background = 'linear-gradient(90deg, #f7d67a, #ff6)';
+            } else {
+                document.getElementById('mineralName').textContent = mineral.name;
+                document.getElementById('mineralRarity').textContent = getRarityLabel(mineral.rarity);
+                document.getElementById('mineralRarity').style.color = getRarityColor(mineral.rarity);
+                document.getElementById('mineralMultiplier').textContent = `×${mineral.multiplier}`;
+                document.getElementById('mineralImage').src = mineral.img;
+                document.getElementById('clickImage').src = mineral.img;
+                document.getElementById('clickMultiplierDisplay').textContent = `+${mineral.multiplier}`;
+
+                const current = state.clicksOnCurrent;
+                const target = mineral.target;
+                const pct = target > 0 ? Math.min(100, (current / target) * 100) : 0;
+
+                document.getElementById('progressCurrent').textContent = formatNumber(current);
+                document.getElementById('progressTarget').textContent = formatNumber(target);
+                document.getElementById('progressFill').style.width = pct + '%';
+                document.getElementById('progressFill').style.background =
+                    `linear-gradient(90deg, ${getRarityColor(mineral.rarity)}, #f7d67a)`;
+            }
+
+            document.getElementById('totalClicksDisplay').textContent = formatNumber(state.totalClicks);
+            document.getElementById('totalClicksDisplay2').textContent = formatNumber(state.totalClicks);
+
+            const card = document.getElementById('mineralCard');
+            if (['Legendary', 'Exotic', 'Apex'].includes(mineral.rarity) && !isFinished) {
+                card.classList.add('legendary');
+            } else {
+                card.classList.remove('legendary');
+            }
+
+            document.getElementById('rebirthCountDisplay').textContent = state.rebirthCount;
+            document.getElementById('rebirthMultiplierDisplay').textContent = `×${state.rebirthMultiplier}`;
+
+            const rebirthBtn = document.getElementById('rebirthBtn');
+            if (state.gameCompleted && state.rebirthCount < 25) {
+                rebirthBtn.style.display = 'inline-block';
+                rebirthBtn.disabled = false;
+                rebirthBtn.textContent = '🔄 Переродиться';
+            } else if (state.rebirthCount >= 25) {
+                rebirthBtn.style.display = 'inline-block';
+                rebirthBtn.disabled = true;
+                rebirthBtn.textContent = '🏆 Максимум';
+            } else {
+                rebirthBtn.style.display = 'none';
+            }
+
+            checkBackgroundMusic();
+            renderIndex();
+            renderInventory();
+            renderMine();
+            saveGame();
+        }
+
+        // ================================================================
+        //  КЛИКЕР
+        // ================================================================
+        function handleClick(event) {
+            if (state.gameCompleted) return;
+            const mineral = getCurrentMineral();
+            state.clicksOnCurrent += mineral.multiplier;
+            state.totalClicks += mineral.multiplier;
+
+            playClickSound();
+
+            const btn = document.getElementById('clickBtn');
+            const rect = btn.getBoundingClientRect();
+            const x = (event.clientX || rect.left + rect.width / 2) - rect.left;
+            const y = (event.clientY || rect.top + rect.height / 2) - rect.top;
+            const el = document.createElement('div');
+            el.className = 'float-text';
+            el.textContent = `+${mineral.multiplier}`;
+            el.style.left = x + 'px';
+            el.style.top = y + 'px';
+            el.style.color = getRarityColor(mineral.rarity);
+            btn.appendChild(el);
+            setTimeout(() => el.remove(), 800);
+
+            if (state.clicksOnCurrent >= mineral.target) {
+                if (state.currentMineralIndex < MINERALS.length - 1) {
+                    const next = MINERALS[state.currentMineralIndex + 1];
+                    
+                    // ====== ПОКАЗЫВАЕМ РЕКЛАМУ ПРИ ПЕРЕХОДЕ ======
+                    showInterstitialAd();
+                    
+                    if (next.rarity === 'Legendary') {
+                        playDivineSound();
+                    } else if (next.rarity === 'Exotic') {
+                        playExoticSound();
+                    } else if (next.rarity === 'Apex') {
+                        playApexSound();
+                    } else {
+                        playLevelUpSound();
+                    }
+                    state.currentMineralIndex++;
+                    state.clicksOnCurrent = 0;
+                    const card = document.getElementById('mineralCard');
+                    card.style.transition = 'transform 0.2s, box-shadow 0.2s';
+                    card.style.transform = 'scale(1.06)';
+                    card.style.boxShadow = `0 0 40px ${getRarityColor(next.rarity)}44`;
+                    setTimeout(() => {
+                        card.style.transform = 'scale(1)';
+                        card.style.boxShadow = 'none';
+                    }, 300);
+                } else {
+                    state.gameCompleted = true;
+                    state.clicksOnCurrent = 0;
+                    stopBackground();
+                    showInterstitialAd(); // Реклама при завершении
+                    alert('🎉 ПОЗДРАВЛЯЕМ! Ты прошёл кликер! Теперь открыта Шахта!');
+                }
+            }
+            updateUI();
+        }
+
+        // ================================================================
+        //  ПЕРЕРОЖДЕНИЕ
+        // ================================================================
+        function rebirth() {
+            if (!state.gameCompleted) {
+                alert('Ты должен сначала завершить кликер (Сердце планеты)!');
+                return;
+            }
+            if (state.rebirthCount >= 25) {
+                alert('🏆 Ты достиг максимального уровня перерождений (25)!');
+                return;
+            }
+
+            if (!confirm('🔄 Переродиться?\nВсе прогрессы сбросятся, но бонусы останутся!')) {
+                return;
+            }
+
+            state.rebirthCount += 1;
+            state.rebirthMultiplier = 1 + state.rebirthCount;
+            state.rebirthTarget = 100000000000;
+
+            state.currentMineralIndex = 0;
+            state.clicksOnCurrent = 0;
+            state.totalClicks = 0;
+            state.gameCompleted = false;
+            state.legendaryReached = false;
+
+            state.mineCollection = new Array(15).fill(false);
+            state.mineFound = null;
+            state.mineCooldown = false;
+
+            stopBackground();
+            alert('🔄 ПЕРЕРОЖДЕНИЕ #' + state.rebirthCount + '!\nМножитель: ×' + state.rebirthMultiplier + '\nЦель: 100 млрд кликов');
+
+            updateUI();
+        }
+
+        // ================================================================
+        //  ИНДЕКС
+        // ================================================================
+        function renderIndex() {
+            const grid = document.getElementById('indexGrid');
+            grid.innerHTML = '';
+            MINERALS.forEach((m, i) => {
+                const div = document.createElement('div');
+                div.className = 'index-item' + (i <= state.currentMineralIndex ? ' found' : '');
+                div.style.animationDelay = (i * 0.02) + 's';
+                div.innerHTML = `
+                    <img src="${m.img}" alt="${m.name}" />
+                    <div class="idx-name">${m.name}</div>
+                `;
+                grid.appendChild(div);
+            });
+
+            const mineGrid = document.getElementById('mineIndexGrid');
+            mineGrid.innerHTML = '';
+            MINE_MINERALS.forEach((m, i) => {
+                const div = document.createElement('div');
+                div.className = 'index-item' + (state.mineCollection[i] ? ' found' : '');
+                div.style.animationDelay = (i * 0.03) + 's';
+                div.innerHTML = `
+                    <img src="${m.img}" alt="${m.name}" />
+                    <div class="idx-name">${m.name}</div>
+                `;
+                mineGrid.appendChild(div);
+            });
+        }
+
+        // ================================================================
+        //  ИНВЕНТАРЬ
+        // ================================================================
+        function renderInventory() {
+            const grid = document.getElementById('inventoryGrid');
+            grid.innerHTML = '';
+            MINE_MINERALS.forEach((m) => {
+                const count = state.inventory[m.id] || 0;
+                const div = document.createElement('div');
+                div.className = 'index-item' + (count > 0 ? ' found' : '');
+                div.innerHTML = `
+                    <img src="${m.img}" alt="${m.name}" />
+                    <div class="idx-name">${m.name}</div>
+                    ${count > 0 ? `<div class="idx-count">×${count}</div>` : ''}
+                `;
+                grid.appendChild(div);
+            });
+
+            const total = Object.values(state.inventory).reduce((a, b) => a + b, 0);
+            document.getElementById('inventoryCount').textContent = 'Найдено: ' + total + ' / ∞';
+        }
+
+        // ================================================================
+        //  ШАХТА
+        // ================================================================
+        async function mineWithAdBonus() {
+            // Показываем рекламу с наградой
+            const watched = await showRewardedAd();
+            
+            // Если реклама не показалась — всё равно даём бонус (для теста)
+            // В реальной игре можно дать двойной бонус за просмотр
+            if (watched) {
+                // Даём +50 кликов в шахте
+                if (state.mineFound) {
+                    state.mineFound.clicksDone += 50;
+                    updateUI();
+                    alert('🎁 Спасибо за просмотр! +50 кликов в шахте!');
+                } else {
+                    alert('🎁 Спасибо за просмотр!');
+                }
+            } else {
+                alert('⚠️ Реклама не загрузилась, попробуй позже.');
+            }
+        }
+
+        function renderMine() {
+            const container = document.getElementById('mineContent');
+            if (!state.gameCompleted) {
+                container.innerHTML = `
+                    <div class="mine-status">
+                        <span class="big">🔒</span>
+                        Шахта откроется после прохождения кликера<br />
+                        <small style="color:#6a5a4a;">Цель: ${formatNumber(state.rebirthTarget)} кликов</small>
+                    </div>
+                `;
+                return;
+            }
+
+            // ===== БОНУСНАЯ КНОПКА (РЕКЛАМА) =====
+            const bonusButton = `
+                <button class="mine-btn" onclick="mineWithAdBonus()" style="background:linear-gradient(145deg,#3a2818,#2a1a10);color:#f7d67a;font-size:14px;margin-top:4px;">
+                    🎁 Бонус за рекламу (+50 кликов в шахте)
+                </button>
+            `;
+
+            if (state.mineFound) {
+                const found = state.mineFound;
+                const mineral = MINE_MINERALS[found.mineralId];
+                const remaining = found.clicksNeeded - found.clicksDone;
+                const pct = found.clicksNeeded > 0 ? (found.clicksDone / found.clicksNeeded) * 100 : 0;
+                const timeLeft = Math.max(0, found.timeLimit - (Date.now() - found.startTime) / 1000);
+                const isTimeout = timeLeft <= 0;
+
+                container.innerHTML = `
+                    <div class="mine-status">
+                        <img src="${mineral.img}" alt="${mineral.name}" />
+                        <strong>${mineral.name}</strong> (${mineral.rarity})
+                    </div>
+                    <div class="mine-progress">
+                        <div class="progress-track">
+                            <div class="progress-fill" style="width:${pct}%;"></div>
+                        </div>
+                    </div>
+                    <div style="display:flex;justify-content:space-between;font-size:14px;">
+                        <span>Кликов: ${found.clicksDone} / ${found.clicksNeeded}</span>
+                        <span class="mine-timer">⏱️ ${Math.ceil(timeLeft)}с</span>
+                    </div>
+                    ${isTimeout ? `
+                        <div style="color:#f66;text-align:center;margin:10px 0;font-weight:700;">
+                            ⚠️ Время вышло! Камень ускользнул...
+                        </div>
+                        <button class="mine-btn" onclick="resetMine()">🔄 Попробовать снова</button>
+                    ` : `
+                        <button class="mine-btn" onclick="mineClick()">
+                            ⛏️ КОПНУТЬ! (${Math.ceil(remaining)} кликов)
+                        </button>
+                        ${bonusButton}
+                    `}
+                `;
+                return;
+            }
+
+            container.innerHTML = `
+                <div class="mine-status">
+                    <span class="big">⛰️</span>
+                    Готов копать? Найди редкий минерал!
+                </div>
+                <button class="mine-btn" onclick="startMine()">⛏️ КОПНУТЬ!</button>
+                <div class="sub-text">
+                    Бонус шахты: +${state.rebirthCount} клик(а) за тап
+                </div>
+                ${bonusButton}
+            `;
+        }
+
+        function startMine() {
+            if (state.mineFound || state.mineCooldown) return;
+            if (!state.gameCompleted) return;
+
+            const weights = [
+                8, 8, 8, 8, 8,
+                6, 6, 6, 6, 6,
+                7.25, 7.25, 7.25, 7.25,
+                1
+            ];
+
+            let totalWeight = weights.reduce((a, b) => a + b, 0);
+            let rand = Math.random() * totalWeight;
+            let chosenId = 0;
+            for (let i = 0; i < weights.length; i++) {
+                rand -= weights[i];
+                if (rand <= 0) {
+                    chosenId = i;
+                    break;
+                }
+            }
+
+            let attempts = 0;
+            while (state.mineCollection[chosenId] && attempts < 50) {
+                rand = Math.random() * totalWeight;
+                for (let i = 0; i < weights.length; i++) {
+                    rand -= weights[i];
+                    if (rand <= 0) {
+                        chosenId = i;
+                        break;
+                    }
+                }
+                attempts++;
+            }
+
+            const allFound = state.mineCollection.every(v => v === true);
+            if (allFound) {
+                state.mineCollection = new Array(15).fill(false);
+                alert('🎉 Шахта обновлена! Начинай собирать заново!');
+                updateUI();
+                return;
+            }
+
+            const finalChosen = MINE_MINERALS[chosenId];
+
+            let clicksNeeded = 120;
+            const rarityMap = {
+                'Лунный': 1, 'Космический': 2, 'Хроно': 3, 'Древний': 4, 'Мифический': 5,
+                'Глубинный': 6, 'Небесный': 7, 'Вулканический': 8, 'Янтарный': 9, 'Звёздный': 10,
+                'Ископаемое': 12, 'Тёмный': 14, 'Светлый': 16, 'Магический': 18, 'Космический': 20,
+            };
+            const mult = rarityMap[finalChosen.rarity] || 1;
+
+            if (finalChosen.name === 'Сердце вселенной') {
+                clicksNeeded = 500;
+            } else {
+                clicksNeeded = 115 + mult * 5;
+            }
+
+            const timeLimit = 35;
+
+            state.mineFound = {
+                mineralId: chosenId,
+                clicksNeeded: clicksNeeded,
+                clicksDone: 0,
+                timeLimit: timeLimit,
+                startTime: Date.now(),
+            };
+
+            updateUI();
+        }
+
+        function mineClick() {
+            if (!state.mineFound) return;
+            const found = state.mineFound;
+            const timeLeft = found.timeLimit - (Date.now() - found.startTime) / 1000;
+            if (timeLeft <= 0) {
+                resetMine();
+                return;
+            }
+
+            found.clicksDone += (1 + state.rebirthCount);
+            updateUI();
+
+            if (found.clicksDone >= found.clicksNeeded) {
+                const mineralId = found.mineralId;
+                const mineral = MINE_MINERALS[mineralId];
+
+                if (!state.inventory[mineralId]) {
+                    state.inventory[mineralId] = 1;
+                } else {
+                    state.inventory[mineralId] += 1;
+                }
+
+                state.mineCollection[mineralId] = true;
+                state.mineFound = null;
+                playMineFoundSound();
+                
+                // ====== ПОКАЗЫВАЕМ РЕКЛАМУ С НАГРАДОЙ ПРИ НАХОДКЕ ======
+                showRewardedAd().then(() => {
+                    // Бонус уже был показан в рекламе
+                });
+                
+                alert('🎉 Ты добыл ' + mineral.name + '! (Всего: ×' + state.inventory[mineralId] + ')');
+
+                const allFound = state.mineCollection.every(v => v === true);
+                if (allFound) {
+                    alert('🏆 Ты собрал ВСЕ 15 камней! Шахта обновилась!');
+                    state.mineCollection = new Array(15).fill(false);
+                }
+
+                updateUI();
+                return;
+            }
+        }
+
+        function resetMine() {
+            state.mineFound = null;
+            state.mineCooldown = true;
+            setTimeout(() => {
+                state.mineCooldown = false;
+                updateUI();
+            }, 2000);
+            updateUI();
+        }
+
+        // ================================================================
+        //  ВКЛАДКИ
+        // ================================================================
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                const tab = this.dataset.tab;
+                document.getElementById('tab-' + tab).classList.add('active');
+            });
+        });
+
+        // ================================================================
+        //  КЛИК ПО КНОПКЕ
+        // ================================================================
+        document.getElementById('clickBtn').addEventListener('click', handleClick);
+
+        // ================================================================
+        //  ПЕРЕРОЖДЕНИЕ
+        // ================================================================
+        document.getElementById('rebirthBtn').addEventListener('click', rebirth);
+
+        // ================================================================
+        //  ЗАПУСК
+        // ================================================================
+        async function initGame() {
+            // Инициализируем SDK Яндекса
+            await initYandexSDK();
+            
+            // Загружаем сохранения
+            loadGame();
+            
+            // Обновляем UI
+            updateUI();
+            
+            console.log('🎮 Игра запущена!');
+        }
+
+        // Запускаем игру
+        initGame();
+    </script>
+</body>
+</html>
